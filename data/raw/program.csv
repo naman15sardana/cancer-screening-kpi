@@ -1,0 +1,4 @@
+program_id,program_name,min_age,max_age,sex_eligible,followup_target_days
+1,Breast Screening,40,74,F,30
+2,Cervix Screening,25,69,F,60
+3,Colon Screening,50,74,A,60

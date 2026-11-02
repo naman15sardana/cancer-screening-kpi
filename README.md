@@ -1,12 +1,14 @@
 # Cancer Screening KPI Pipeline
 
-A SQL Server reporting pipeline for a cancer screening program, built on **synthetic data** for 20,000 patients across BC's five regional health authorities. It loads raw data, checks and cleans it, and calculates the KPIs a screening program reports on: participation rates and wait times from an abnormal result to diagnostic follow-up.
+A learning project: a SQL Server reporting pipeline for a cancer screening program, built on **synthetic data** for 20,000 patients across BC's five regional health authorities. It loads raw data, checks and cleans it, and calculates the KPIs a screening program reports on: participation rates and wait times from an abnormal result to diagnostic follow-up.
 
-> All data is synthetic, generated with a fixed random seed. No real patient information is used.
+> All data is synthetic, generated with a fixed random seed. No real patient information is used, and **the results below say nothing about real BC screening**.
 
 **Tools:** SQL Server 2022 (T-SQL) in Docker · Python (pandas, NumPy, pymssql) · Excel
 
-## Key findings
+## Validating the pipeline
+
+The data generator builds in known patterns on purpose: lower screening rates and longer follow-up waits in rural regions (Northern and Interior). The test was whether the SQL pipeline, working only from the raw records, would recover those patterns correctly. It did:
 
 | | Vancouver Coastal | Northern |
 |---|---|---|
@@ -14,11 +16,11 @@ A SQL Server reporting pipeline for a cancer screening program, built on **synth
 | Median days to follow-up (cervix) | 19.5 | 67 |
 | Abnormal results followed up within target (cervix) | 92% | 35% |
 
-1. **Northern Health has the lowest participation in all three programs** (41–44%, vs 61–62% in Vancouver Coastal).
-2. **Northern patients wait 2–3× longer for follow-up** after an abnormal result, and most miss the target.
-3. **Breast screening misses its 30-day follow-up target in most regions.** Its target is stricter than cervix and colon (60 days).
+- The participation KPI recovered the lower screening rate built in for Northern Health (about 43%) in all three programs.
+- The follow-up KPI recovered the longer wait range built in for Northern (15–90 days, median ≈ 52), against 5–35 days for Vancouver Coastal.
+- The dashboard also shows a pattern that wasn't programmed directly: breast screening misses its follow-up target most often, because its 30-day target is stricter than cervix and colon (60 days).
 
-Small groups (e.g. Northern breast follow-ups, n = 6; patients with an unknown region, n ≈ 10 per program) are reported but too small to draw firm conclusions from.
+Small groups (e.g. Northern breast follow-ups, n = 6; patients with an unknown region, n ≈ 10 per program) are reported but are too small to interpret.
 
 ![Participation by region](dashboard/participation.png)
 ![Follow-up wait by region](dashboard/followup_wait.png)

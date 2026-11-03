@@ -4,7 +4,9 @@ A learning project: a SQL Server reporting pipeline for a cancer screening progr
 
 > All data is synthetic, generated with a fixed random seed. No real patient information is used, and **the results below say nothing about real BC screening**.
 
-**Tools:** SQL Server 2022 (T-SQL) in Docker · Python (pandas, NumPy, pymssql) · Excel
+**Tools:** SQL Server 2022 (T-SQL) in Docker · Python (pandas, NumPy, pymssql) · Power BI (DAX) · Excel
+
+![Power BI dashboard](dashboard/screening_dashboard.png)
 
 ## Validating the pipeline
 
@@ -28,7 +30,7 @@ Small groups (e.g. Northern breast follow-ups, n = 6; patients with an unknown r
 ## How it works
 
 ```
-CSV files ──► stg (raw, no rules) ──► data quality checks ──► dbo (clean, keys + constraints) ──► rpt (KPI views) ──► Excel
+CSV files ──► stg (raw, no rules) ──► data quality checks ──► dbo (clean, keys + constraints) ──► rpt (KPI views) ──► Power BI / Excel
 ```
 
 | Step | File | What it does |
@@ -39,7 +41,21 @@ CSV files ──► stg (raw, no rules) ──► data quality checks ──► 
 | 4 | `sql/03_clean.sql` | Builds the clean model with primary keys, foreign keys and CHECK constraints. Removes duplicates with `ROW_NUMBER()`, drops impossible dates, and flags bad follow-up dates for review. |
 | 5 | `sql/04_kpis.sql` | KPI views: participation rate by program and region, median follow-up wait (`PERCENTILE_CONT`), % followed up within target, and % lost to follow-up. |
 | – | `sql/test.sql` | Queries that pivot the KPI views into chart-ready tables for Excel. |
-| 6 | `dashboard/` | Excel dashboard and charts built from the KPI views. |
+| 6 | `dashboard/screening_dashboard.pbix` | Power BI dashboard connected directly to SQL Server (see below). |
+| – | `dashboard/` | Earlier Excel dashboard and charts built from the KPI views. |
+
+## Power BI dashboard
+
+`dashboard/screening_dashboard.pbix` connects to the SQL Server database and imports the two KPI views. The KPI logic stays in SQL; Power BI only presents it.
+
+- **Data model:** the `program` table is related one-to-many to both KPI views on `program_name`, so a single program slicer filters every visual on the page.
+- **DAX measures:**
+  - `Overall Participation % = DIVIDE(SUM(screened_people), SUM(eligible_people))`: totals are divided rather than percentages averaged.
+  - `Within Target % = DIVIDE(SUMX(rows, abnormal_results * pct_within_target / 100), SUM(abnormal_results))`: a weighted average, so larger groups count more than small ones.
+- **Cards:** overall participation (56.3%), program screenings (15K) and abnormal results followed up within target (82.7%).
+- "Program screenings" counts a person once per program they were screened in, so it is not a count of unique people.
+- Patients with an unknown health authority are left out of the regional charts because the groups are too small (n ≈ 10 per program).
+- Participation is almost identical across programs (about 56%) because the generator applies the same regional rates to every program. The differences in this data are between regions, by design.
 
 ## Data quality results
 
@@ -76,6 +92,6 @@ python load_staging.py
 
 ## Next steps
 - Add KPIs for monthly screening volume (rolling average) and cancer detection rate per 1,000 screens
-- Rebuild the dashboard in Power BI with slicers by program and region
+- Add a monthly trend page to the Power BI dashboard
 - Add a data dictionary for every table and column
 - Log each data quality run to an audit table to track quality over time
